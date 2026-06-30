@@ -74,13 +74,14 @@
     padding: 10px 22px; border-radius: var(--r-pill);
     font-size: 14px; font-weight: 500; transition: all .2s ease; white-space: nowrap;
   }
-  .btn-primary { background: var(--black); color: #fff; }
-  .btn-primary:hover { background: #3a3a3c; }
+  .btn-primary { background: var(--black); color: #fff; box-shadow: 0 0 16px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.15); }
+  .btn-primary:hover { background: #3a3a3c; box-shadow: 0 0 22px rgba(0,0,0,.25), 0 2px 10px rgba(0,0,0,.2); }
   .btn-secondary {
-    background: transparent; color: var(--black);
-    border: 1.5px solid rgba(0,0,0,.22);
+    background: var(--surface); color: var(--black);
+    border: 1.5px solid rgba(0,0,0,.18);
+    box-shadow: 0 0 14px rgba(0,0,0,.1), 0 2px 6px rgba(0,0,0,.08);
   }
-  .btn-secondary:hover { background: var(--surface3); border-color: rgba(0,0,0,.35); }
+  .btn-secondary:hover { background: var(--surface3); border-color: rgba(0,0,0,.3); box-shadow: 0 0 20px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.12); }
   .btn-success { background: var(--green-dim); color: var(--green); border: 1.5px solid rgba(26,122,60,.2); }
   .btn-success:hover { background: var(--green); color: #fff; border-color: var(--green); }
   .btn-danger  { background: var(--red-dim); color: var(--red); border: 1.5px solid rgba(179,58,42,.2); }
@@ -395,6 +396,22 @@
     #app-header { padding: 0 16px; }
     #app-nav { padding: 16px 16px; }
     .disp-day { width: 58px; min-height: 64px; }
+  }
+
+  /* MODO VISUALIZADOR — solo lectura */
+  body.modo-visualizador .disp-day { pointer-events: none !important; opacity: .95; }
+  body.modo-visualizador .disp-admin-grid td:not(.name-col) { pointer-events: none !important; }
+  body.modo-visualizador #btn-nuevo-miembro-wrap,
+  body.modo-visualizador #btn-agregar-fecha,
+  body.modo-visualizador #btn-nuevo-periodo,
+  body.modo-visualizador #btn-generar-grupos,
+  body.modo-visualizador #btn-confirmar-grupos,
+  body.modo-visualizador .btn-success,
+  body.modo-visualizador .btn-danger { display: none !important; }
+  body.modo-visualizador .badge-visualizador {
+    background: var(--blue-dim); color: var(--blue);
+    padding: 2px 10px; border-radius: 980px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px;
   }
 </style>
 </head>
@@ -883,7 +900,7 @@ function badgeEstado(estado) {
 }
 
 function rolLabel(rol) {
-  const map = { super_admin:'Super Admin', admin:'Admin', lider_seguimiento:'Líder', coreuta:'Coreuta' };
+  const map = { super_admin:'Super Admin', admin:'Admin', lider_seguimiento:'Líder', coreuta:'Coreuta', visualizador:'Visualizador' };
   return map[rol] || rol;
 }
 
@@ -954,12 +971,20 @@ function mostrarApp() {
   const rol = p?.rol_sistema;
   const isAdmin = rol === 'super_admin' || rol === 'admin';
   const isLider = rol === 'lider_seguimiento';
+  const isVisualizador = rol === 'visualizador';
 
-  if (isAdmin) {
+  if (isAdmin || isVisualizador) {
     document.querySelectorAll('[data-section="solicitudes"],[data-section="admin"]')
       .forEach(el => el.classList.remove('hidden'));
-    document.getElementById('btn-nuevo-miembro-wrap')?.classList.remove('hidden');
     document.getElementById('filtros-miembros')?.classList.remove('hidden');
+  }
+  // Solo admins reales pueden crear miembros
+  if (isAdmin) {
+    document.getElementById('btn-nuevo-miembro-wrap')?.classList.remove('hidden');
+  }
+  // Modo solo lectura para visualizadores
+  if (isVisualizador) {
+    document.body.classList.add('modo-visualizador');
   }
 
   // Cargar inicio
@@ -1155,6 +1180,7 @@ async function verDetalleSolicitud(id) {
 }
 
 async function cambiarEstadoSolicitud(id, estado) {
+  if (currentPerfil && currentPerfil.rol_sistema === 'visualizador') { toast('Modo solo lectura', true); return; }
   await sb.from('solicitudes_ingreso').update({ estado, revisado_por: currentUser.id, fecha_revision: new Date().toISOString() }).eq('id', id);
   const idx = todasLasSolicitudes.findIndex(x => x.id === id);
   if (idx >= 0) todasLasSolicitudes[idx].estado = estado;
@@ -1409,6 +1435,7 @@ function editarMiembro(p) {
 }
 
 async function guardarMiembro(id) {
+  if (currentPerfil && currentPerfil.rol_sistema === 'visualizador') { toast('Modo solo lectura', true); return; }
   const updates = {
     nombre_completo: document.getElementById('em-nombre').value,
     telefono: document.getElementById('em-tel').value,
@@ -1708,6 +1735,7 @@ function toggleDia(fecha, el) {
 }
 
 async function setTurno(fecha, turno) {
+  if (currentPerfil && currentPerfil.rol_sistema === 'visualizador') { toast('Modo solo lectura', true); return; }
   document.querySelectorAll('.turno-selector').forEach(function(s){ s.remove(); });
 
   const uid = currentUser.id;
@@ -1844,6 +1872,7 @@ function renderDispAdmin() {
 }
 
 async function setTurnoAdmin(perfilId, fecha, turno, tdEl) {
+  if (currentPerfil && currentPerfil.rol_sistema === 'visualizador') { toast('Modo solo lectura', true); return; }
   if (!domingosMapa[perfilId]) domingosMapa[perfilId] = {};
   var existing = domingosMapa[perfilId][fecha];
   if (turno) {
@@ -2113,6 +2142,7 @@ async function verNotasMiembro(asignacionId, nombre) {
 }
 
 async function guardarNota(asignacionId) {
+  if (currentPerfil && currentPerfil.rol_sistema === 'visualizador') { toast('Modo solo lectura', true); return; }
   const texto  = document.getElementById('nueva-nota').value.trim();
   const tipo   = document.getElementById('nota-tipo') ? document.getElementById('nota-tipo').value : '';
   const nec    = document.getElementById('nota-necesidad') ? document.getElementById('nota-necesidad').value.trim() : '';
