@@ -1944,7 +1944,9 @@ function exportarDisp() {
   // Semáforo: resaltar domingos con poca cobertura
   const tabla = document.getElementById('disp-admin-tabla');
   const win = window.open('');
-  win.document.write(`<html><head><title>Disponibilidad</title><style>table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px 6px;font-size:12px}</style></head><body>${tabla.outerHTML}</body></html>`);
+  win.document.write(`<html><head><title>Disponibilidad</title><style>table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px 6px;font-size:12px}</style></head><body>${tabla.outerHTML}
+
+</body></html>`);
   win.print();
 }
 
@@ -2490,6 +2492,60 @@ function abrirPerfilDesdeSearch(id) {
 // INICIO
 // ============================================================
 init();
+</script>
+
+<!-- REPRODUCTOR FLOTANTE Hillsong -->
+<div id="music-player" style="position:fixed;bottom:20px;right:20px;z-index:9000;">
+  <button id="music-toggle" onclick="toggleMusicPanel()" style="width:52px;height:52px;border-radius:50%;background:#B8960C;color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(184,150,12,.4);display:flex;align-items:center;justify-content:center;font-size:22px;transition:all .2s;">
+    <span id="music-icon">&#127925;</span>
+  </button>
+  <div id="music-panel" style="display:none;position:absolute;bottom:62px;right:0;width:300px;background:#111;border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.4);border:1px solid #2a2a2a;">
+    <div style="padding:12px 16px;background:#1a1a1a;display:flex;align-items:center;justify-content:space-between;">
+      <div style="color:#B8960C;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Hillsong en Espanol</div>
+      <button onclick="toggleMusicPanel()" style="background:none;border:none;color:#888;cursor:pointer;font-size:16px;">&#10005;</button>
+    </div>
+    <div id="yt-container" style="position:relative;width:100%;height:170px;background:#000;"></div>
+    <div style="padding:10px 14px;background:#1a1a1a;display:flex;gap:8px;align-items:center;justify-content:center;">
+      <button onclick="ytPrev()" style="background:#2a2a2a;border:none;color:#fff;width:38px;height:34px;border-radius:8px;cursor:pointer;font-size:14px;">&#9198;</button>
+      <button onclick="ytPlayPause()" id="yt-playpause" style="background:#B8960C;border:none;color:#fff;width:46px;height:34px;border-radius:8px;cursor:pointer;font-size:14px;">&#9208;</button>
+      <button onclick="ytNext()" style="background:#2a2a2a;border:none;color:#fff;width:38px;height:34px;border-radius:8px;cursor:pointer;font-size:14px;">&#9197;</button>
+    </div>
+  </div>
+</div>
+<script>
+var ytPlayer=null, ytReady=false, musicPanelOpen=false;
+var PLAYLIST_ID='PLYSYiKAMxS3k0sUj3MN3PjALBGfQV4g7X';
+function cargarYouTubeAPI(){
+  if(document.getElementById('youtube-api-script'))return;
+  var tag=document.createElement('script');
+  tag.id='youtube-api-script';
+  tag.src='https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+}
+function onYouTubeIframeAPIReady(){
+  var cont=document.createElement('div');
+  cont.id='yt-player-div';
+  document.getElementById('yt-container').appendChild(cont);
+  ytPlayer=new YT.Player('yt-player-div',{
+    height:'170',width:'300',
+    playerVars:{listType:'playlist',list:PLAYLIST_ID,autoplay:1,controls:0,modestbranding:1,rel:0},
+    events:{'onReady':function(){ytReady=true;ytPlayer.playVideo();}}
+  });
+}
+function toggleMusicPanel(){
+  var panel=document.getElementById('music-panel');
+  musicPanelOpen=!musicPanelOpen;
+  if(musicPanelOpen){panel.style.display='block';if(!ytPlayer)cargarYouTubeAPI();}
+  else{panel.style.display='none';}
+}
+function ytPlayPause(){
+  if(!ytReady||!ytPlayer)return;
+  var st=ytPlayer.getPlayerState();
+  if(st===1){ytPlayer.pauseVideo();document.getElementById('yt-playpause').innerHTML='&#9654;';}
+  else{ytPlayer.playVideo();document.getElementById('yt-playpause').innerHTML='&#9208;';}
+}
+function ytNext(){if(ytReady&&ytPlayer)ytPlayer.nextVideo();}
+function ytPrev(){if(ytReady&&ytPlayer)ytPlayer.previousVideo();}
 </script>
 </body>
 </html>
